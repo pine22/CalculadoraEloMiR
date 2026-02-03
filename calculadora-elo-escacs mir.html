@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora d'ELO (CAT/FIDE)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .club-name {
+            font-size: 1.8em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .info-box p {
+            color: #666;
+            line-height: 1.6;
+            font-size: 0.9em;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-field label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .form-field input,
+        .form-field select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .round-input {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .round-input h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .round-controls {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .result-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .result-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .result-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .result-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .results-table {
+            margin-top: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .elo-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .elo-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .elo-card h4 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .elo-card .value {
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        .elo-card.positive {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .elo-card.negative {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .resources {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .resources h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .resources a {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 15px;
+            font-weight: 600;
+        }
+
+        .resources a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .input-group {
+                grid-template-columns: 1fr;
+            }
+
+            .round-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="club-name">Club d'Escacs MiR</div>
+           
+            <h1>⚔️ Calculadora d'ELO (CAT/FIDE)</h1>
+            <p>Calcula el canvi d'ELO en torneigs amb el mètode FIDE</p>
+			 </div>
+        </div>
+
+        <div class="content">
+            <div class="info-box">
+                <h3>Com funciona?</h3>
+                <p><strong>Expectativa per ronda:</strong> E = 1 / (1 + 10^((Rop − R0)/400)), on R0 és l'ELO inicial del torneig (constant).</p>
+                <p><strong>Canvi total:</strong> ΔR = K · (ΣS − ΣE), amb S = 1 (victòria) / 0,5 (taules) / 0 (derrota).</p>
+            </div>
+
+            <div class="input-group">
+                <div class="form-field">
+                    <label for="eloInicial">ELO inicial del jugador</label>
+                    <input type="number" id="eloInicial" value="1500" min="0" max="3000">
+                </div>
+                <div class="form-field">
+                    <label for="factorK">Factor K</label>
+                    <select id="factorK">
+                        <option value="40">40 (menors 18 anys / menys 30 partides)</option>
+                        <option value="20" selected>20 (adults / ràpides-blitz)</option>
+                        <option value="10">10 (personalitzat)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="round-input">
+                <h3>Afegir nova ronda</h3>
+                <div class="round-controls">
+                    <div class="form-field">
+                        <label for="eloRival">ELO del rival</label>
+                        <input type="number" id="eloRival" placeholder="Ex: 1600" min="0" max="3000">
+                    </div>
+                    <div class="form-field">
+                        <label>Resultat</label>
+                        <div class="result-buttons">
+                            <button class="result-btn" data-result="1">1</button>
+                            <button class="result-btn" data-result="0.5">0.5</button>
+                            <button class="result-btn" data-result="0">0</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="afegirRonda()">➕ Afegir ronda</button>
+                </div>
+            </div>
+
+            <div class="results-table" id="resultsSection" style="display: none;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">Resultats del torneig</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ronda</th>
+                            <th>ELO rival</th>
+                            <th>Resultat</th>
+                            <th>E (esperat)</th>
+                            <th>ΔR ronda</th>
+                            <th>ELO acumulat</th>
+                            <th>Accions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rondesTableBody">
+                    </tbody>
+                </table>
+
+                <div class="elo-summary">
+                    <div class="elo-card">
+                        <h4>ELO inicial</h4>
+                        <div class="value" id="eloInicialDisplay">1500</div>
+                    </div>
+                    <div class="elo-card" id="canviCard">
+                        <h4>Canvi total (ΔR)</h4>
+                        <div class="value" id="canviTotal">0</div>
+                    </div>
+                    <div class="elo-card">
+                        <h4>ELO final</h4>
+                        <div class="value" id="eloFinal">1500</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="guardarResultats()">💾 Guardar resultats</button>
+                    <button class="btn btn-danger" onclick="esborrarTot()">🗑️ Esborrar tot</button>
+                </div>
+            </div>
+
+            <div class="resources">
+                <h3>Recursos útils</h3>
+                <a href="https://www.fide.com" target="_blank">FIDE</a>
+                <a href="https://www.escacs.cat" target="_blank">Federació Catalana d'Escacs</a>
+                <a href="https://ratings.fide.com" target="_blank">Ràtings FIDE</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rondes = [];
+        let resultatSeleccionat = null;
+
+        // Gestionar selecció de resultat
+        document.querySelectorAll('.result-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.result-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                resultatSeleccionat = parseFloat(this.dataset.result);
+            });
+        });
+
+        function calcularExpectativa(eloJugador, eloRival) {
+            return 1 / (1 + Math.pow(10, (eloRival - eloJugador) / 400));
+        }
+
+        function afegirRonda() {
+            const eloRival = parseFloat(document.getElementById('eloRival').value);
+            
+            if (!eloRival || eloRival <= 0) {
+                alert('Si us plau, introdueix un ELO vàlid per al rival');
+                return;
+            }
+
+            if (resultatSeleccionat === null) {
+                alert('Si us plau, selecciona un resultat (1, 0.5 o 0)');
+                return;
+            }
+
+            const eloInicial = parseFloat(document.getElementById('eloInicial').value);
+            const factorK = parseFloat(document.getElementById('factorK').value);
+
+            const expectativa = calcularExpectativa(eloInicial, eloRival);
+            const deltaRonda = factorK * (resultatSeleccionat - expectativa);
+
+            rondes.push({
+                eloRival: eloRival,
+                resultat: resultatSeleccionat,
+                expectativa: expectativa,
+                deltaRonda: deltaRonda
+            });
+
+            actualitzarTaula();
+            
+            // Netejar inputs
+            document.getElementById('eloRival').value = '';
+            document.querySelectorAll('.result-btn').forEach(b => b.classList.remove('active'));
+            resultatSeleccionat = null;
+        }
+
+        function actualitzarTaula() {
+            const tbody = document.getElementById('rondesTableBody');
+            tbody.innerHTML = '';
+
+            const eloInicial = parseFloat(document.getElementById('eloInicial').value);
+            let eloAcumulat = eloInicial;
+            let sumatori = 0;
+
+            rondes.forEach((ronda, index) => {
+                sumatori += ronda.deltaRonda;
+                eloAcumulat = eloInicial + sumatori;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${index + 1}</strong></td>
+                    <td>${ronda.eloRival}</td>
+                    <td><strong>${ronda.resultat}</strong></td>
+                    <td>${ronda.expectativa.toFixed(3)}</td>
+                    <td style="color: ${ronda.deltaRonda >= 0 ? '#28a745' : '#dc3545'}">
+                        ${ronda.deltaRonda >= 0 ? '+' : ''}${ronda.deltaRonda.toFixed(1)}
+                    </td>
+                    <td><strong>${Math.round(eloAcumulat)}</strong></td>
+                    <td>
+                        <button class="delete-btn" onclick="esborrarRonda(${index})">Esborrar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Actualitzar resum
+            const canviTotal = sumatori;
+            const eloFinal = eloInicial + canviTotal;
+
+            document.getElementById('eloInicialDisplay').textContent = Math.round(eloInicial);
+            document.getElementById('canviTotal').textContent = (canviTotal >= 0 ? '+' : '') + Math.round(canviTotal);
+            document.getElementById('eloFinal').textContent = Math.round(eloFinal);
+
+            const canviCard = document.getElementById('canviCard');
+            canviCard.classList.remove('positive', 'negative');
+            if (canviTotal > 0) {
+                canviCard.classList.add('positive');
+            } else if (canviTotal < 0) {
+                canviCard.classList.add('negative');
+            }
+
+            // Mostrar secció de resultats
+            document.getElementById('resultsSection').style.display = rondes.length > 0 ? 'block' : 'none';
+        }
+
+        function esborrarRonda(index) {
+            rondes.splice(index, 1);
+            actualitzarTaula();
+        }
+
+        function esborrarTot() {
+            if (confirm('Segur que vols esborrar totes les rondes?')) {
+                rondes = [];
+                actualitzarTaula();
+            }
+        }
+
+        function guardarResultats() {
+            const eloInicial = parseFloat(document.getElementById('eloInicial').value);
+            const factorK = parseFloat(document.getElementById('factorK').value);
+            const canviTotal = rondes.reduce((sum, r) => sum + r.deltaRonda, 0);
+            const eloFinal = eloInicial + canviTotal;
+
+            let text = `CALCULADORA D'ELO - RESULTATS DEL TORNEIG\n`;
+            text += `===========================================\n\n`;
+            text += `ELO inicial: ${Math.round(eloInicial)}\n`;
+            text += `Factor K: ${factorK}\n`;
+            text += `Data: ${new Date().toLocaleDateString('ca-ES')}\n\n`;
+            text += `RONDES:\n`;
+            text += `-------\n`;
+
+            let eloAcum = eloInicial;
+            rondes.forEach((ronda, i) => {
+                const deltaAcum = rondes.slice(0, i + 1).reduce((sum, r) => sum + r.deltaRonda, 0);
+                eloAcum = eloInicial + deltaAcum;
+                text += `Ronda ${i + 1}: vs ELO ${ronda.eloRival} - Resultat: ${ronda.resultat} - `;
+                text += `E: ${ronda.expectativa.toFixed(3)} - ΔR: ${ronda.deltaRonda >= 0 ? '+' : ''}${ronda.deltaRonda.toFixed(1)} - `;
+                text += `ELO acumulat: ${Math.round(eloAcum)}\n`;
+            });
+
+            text += `\nRESUM FINAL:\n`;
+            text += `------------\n`;
+            text += `Canvi total (ΔR): ${canviTotal >= 0 ? '+' : ''}${Math.round(canviTotal)}\n`;
+            text += `ELO final: ${Math.round(eloFinal)}\n`;
+
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `resultats-elo-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Actualitzar al canviar ELO inicial o factor K
+        document.getElementById('eloInicial').addEventListener('change', actualitzarTaula);
+        document.getElementById('factorK').addEventListener('change', actualitzarTaula);
+    </script>
+</body>
+</html>
